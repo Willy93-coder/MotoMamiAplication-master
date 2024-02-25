@@ -1,0 +1,6 @@
+documento; customerType; id; NumberPlate; TipoVehiculo; Marca; Modelo; Color; NumeroSerial;
+12345678A; Persona; 1; ABC123; Automóvil; Toyota; Corolla; Azul; 123456789
+98765432B; Empresa; 2; XYZ789; Motocicleta; Honda; CB500; Rojo; 987654321
+56789012C; Persona; 3; DEF456; Camioneta; Ford; Explorer; Negro; 456789012
+34567890D; Empresa; 4; GHI789; Bicicleta; Trek; Mountainbike; Verde; 789012345
+21098765E; Persona; 5; JKL012; Camión; Volvo; VNL; Blanco; 012345678
