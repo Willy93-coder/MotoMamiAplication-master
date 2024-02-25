@@ -17,7 +17,7 @@ public class MotomamiController {
     ProcessService pService;
     @RequestMapping("/")
     String hellow(){
-        return "Hello World!";
+        return "Página de inicio";
     }
 
     @RequestMapping(value =("/readInfo/{resource}"), method = RequestMethod.GET, produces = "application/json")
@@ -64,5 +64,22 @@ public class MotomamiController {
         }
         System.out.println("El valor de resource en procesar es: "+ resource);
         return "Procesando";
+    }
+
+    @RequestMapping(value =("/generateInvoice/{resource}"), method = RequestMethod.GET, produces = "application/json")
+    String callGenerateInvoice(@PathVariable String resource){
+        try{
+            System.out.println("\nMe estan llamando desde la web de generar facturas");
+            switch (resource.toUpperCase()){
+                case C_SOURCE_PARTS:
+                    pService.generateProviderInvoice(C_SOURCE_INVOICE);
+                    break;
+                default:
+            }
+        } catch (Exception e){
+            System.err.println("No funcionan las tareas de generar facturas: " + e.getMessage());
+        }
+        System.out.println("El valor de resource en generar factura es: "+ resource);
+        return "Generando factura";
     }
 }

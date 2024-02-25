@@ -7,10 +7,7 @@ import com.motomami.model.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.text.ParseException;
@@ -80,8 +77,129 @@ public class ProcessServiceImpl implements ProcessService {
                 default:
             }
         } catch (Exception e) {
-            System.err.println("Error procesando los datos de la interfaz: " + e.getMessage());
+            System.err.println("Error procesando los datos: " + e.getMessage());
         }
+    }
+
+    public void generateProviderInvoice(String source) {
+        try {
+            switch (source) {
+                case C_SOURCE_INVOICE:
+                    generateInvoice();
+                    break;
+                default:
+            }
+        } catch (Exception e) {
+            System.err.println("Error generando la factura: " + e.getMessage());
+        }
+    }
+
+    private void generateInvoice() {
+        ArrayList<InvoiceDto> invoices = null;
+        for (String provider : providers) {
+            try {
+                insertDataInvoiceToDB(provider);
+                invoices = getDataInvoiceToDB(provider);
+            } catch (SQLException e) {
+                System.err.println("Error al acceder a los datos de mm_invoice: " + e.getMessage());
+            }
+        }
+        for (InvoiceDto invoice : invoices) {
+            try {
+                writeInvoiceFile(invoice);
+            } catch (IOException e) {
+                System.err.println("Error al escribir las facturas: " + e.getMessage());
+            }
+        }
+    }
+
+    private void writeInvoiceFile(InvoiceDto invoice) throws IOException {
+        // TODO: Escribir documento con la factura
+        FileWriter wr = new FileWriter("src/main/resources/INVOICES/"+ "invoice_" + invoice.getProviderName() + "_" + invoice.getInvoiceDate() + ".txt");
+        BufferedWriter br = new BufferedWriter(wr);
+        String invoiceStruct = "";
+        br.write(invoiceStruct);
+        br.flush();
+        br.close();
+    }
+
+    private void insertDataInvoiceToDB(String provider) throws SQLException {
+        try {
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/motomamidb", "root", "rootroot");
+            String query = "INSERT INTO mm_invoice (invoice_date = sysdate(), provider_name, people_quantity, unit_price) VALUES (?, ?, ?, ?, ?)";
+            int total = getTotalPeopleByProvider(provider);
+            PreparedStatement ps;
+            ps = con.prepareStatement(query);
+            ps.setString(2, provider);
+            ps.setInt(3, total);
+            ps.setDouble(4, 20.3);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error al obtener el total de asegurados: " + e.getMessage());
+        } finally {
+            if (con != null) {
+                con.close();
+            }
+        }
+    }
+
+    private ArrayList<InvoiceDto> getDataInvoiceToDB(String provider) throws SQLException {
+        ArrayList<InvoiceDto> invoices = null;
+        try {
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/motomamidb", "root", "rootroot");
+            String query = "SELECT * FROM mm_invoice WHERE provider_name = ?";
+            invoices = new ArrayList<>();
+            InvoiceDto invoiceDto = new InvoiceDto();
+            PreparedStatement ps;
+            ResultSet rs;
+            ps = con.prepareStatement(query);
+            ps.setString(1, provider);
+            rs = ps.executeQuery();
+            invoices.add(invoiceDto);
+            while (rs.next()) {
+                invoiceDto.setInvoiceNum(rs.getLong("invoice_num"));
+                invoiceDto.setInvoiceDate(rs.getDate("invoice_date"));
+                invoiceDto.setPeopleQuantity(rs.getInt("people_quantity"));
+                invoiceDto.setUnitPrice(rs.getDouble("unit_price"));
+                invoiceDto.setTax(rs.getInt("tax"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener el total de asegurados: " + e.getMessage());
+        } finally {
+            if (con != null) {
+                con.close();
+            }
+        }
+        return invoices;
+    }
+
+    private int getTotalPeopleByProvider(String provider) throws SQLException {
+        int totalPeople = 0;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/motomamidb", "root", "rootroot");
+            String query = "SELECT COUNT(*) AS total_personas FROM mm_intcustomers WHERE idProv = ?";
+            ps = con.prepareStatement(query);
+            ps.setString(1, provider);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                totalPeople = rs.getInt("total_personas");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al ejecutar la query en getTotalPeopleByProvider: " + e.getMessage());
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (ps != null) {
+                ps.close();
+            }
+            if (con != null) {
+                con.close();
+            }
+        }
+        return totalPeople;
     }
 
     private void processFileInfoVehicles() {

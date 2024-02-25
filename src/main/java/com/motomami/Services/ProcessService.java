@@ -7,4 +7,6 @@ public interface ProcessService {
     void readFileInfo(String pSource);
 
     void processInfoWithStatusNotProcessed(String pSource);
+
+    void generateProviderInvoice(String pSource);
 }
