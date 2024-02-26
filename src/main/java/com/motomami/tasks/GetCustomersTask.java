@@ -10,16 +10,16 @@ import static com.motomami.Utils.Constants.C_SOURCE_CUSTOMER;
 @Component
 public class GetCustomersTask {
     
-    @Autowired
-    ProcessService pService;
-
-    @Scheduled(cron = "${cron.task.getCustomer}")
-    public void task(){
-        try{
-            System.out.println("\nEsta tarea se lanza cada 15 segundos");
-            pService.readFileInfo(C_SOURCE_CUSTOMER);
-        } catch (Exception e){
-            System.err.println("Error al ejecutar la task GetCustomersTask: " + e.getMessage());
-        }
-    }
+//    @Autowired
+//    ProcessService pService;
+//
+//    @Scheduled(cron = "${cron.task.getCustomer}")
+//    public void task(){
+//        try{
+//            System.out.println("\nEsta tarea se lanza cada 15 segundos");
+//            pService.readFileInfo(C_SOURCE_CUSTOMER);
+//        } catch (Exception e){
+//            System.err.println("Error al ejecutar la task GetCustomersTask: " + e.getMessage());
+//        }
+//    }
 }

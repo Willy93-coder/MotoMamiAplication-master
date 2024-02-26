@@ -16,7 +16,7 @@ public class MotomamiController {
     @Autowired
     ProcessService pService;
     @RequestMapping("/")
-    String hellow(){
+    String homePage(){
         return "Página de inicio";
     }
 
@@ -70,11 +70,8 @@ public class MotomamiController {
     String callGenerateInvoice(@PathVariable String resource){
         try{
             System.out.println("\nMe estan llamando desde la web de generar facturas");
-            switch (resource.toUpperCase()){
-                case C_SOURCE_PARTS:
-                    pService.generateProviderInvoice(C_SOURCE_INVOICE);
-                    break;
-                default:
+            if (resource.toUpperCase().equals(C_SOURCE_INVOICE)) {
+                pService.generateProviderInvoice(C_SOURCE_INVOICE);
             }
         } catch (Exception e){
             System.err.println("No funcionan las tareas de generar facturas: " + e.getMessage());

@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -83,11 +84,9 @@ public class ProcessServiceImpl implements ProcessService {
 
     public void generateProviderInvoice(String source) {
         try {
-            switch (source) {
-                case C_SOURCE_INVOICE:
-                    generateInvoice();
-                    break;
-                default:
+            if (source.equals(C_SOURCE_INVOICE)) {
+                System.out.println("🚧 Estoy dentro del if en generateProviderInvoice");
+                generateInvoice();
             }
         } catch (Exception e) {
             System.err.println("Error generando la factura: " + e.getMessage());
@@ -104,35 +103,56 @@ public class ProcessServiceImpl implements ProcessService {
                 System.err.println("Error al acceder a los datos de mm_invoice: " + e.getMessage());
             }
         }
-        for (InvoiceDto invoice : invoices) {
-            try {
-                writeInvoiceFile(invoice);
-            } catch (IOException e) {
-                System.err.println("Error al escribir las facturas: " + e.getMessage());
+        if (invoices != null) {
+            for (InvoiceDto invoice : invoices) {
+                try {
+                    writeInvoiceFile(invoice);
+                } catch (IOException e) {
+                    System.err.println("Error al escribir las facturas: " + e.getMessage());
+                }
             }
         }
     }
 
     private void writeInvoiceFile(InvoiceDto invoice) throws IOException {
-        // TODO: Escribir documento con la factura
-        FileWriter wr = new FileWriter("src/main/resources/INVOICES/"+ "invoice_" + invoice.getProviderName() + "_" + invoice.getInvoiceDate() + ".txt");
+        String absolutePath = "/Users/willy/Desktop/MotoMamiAplication-master/src/main/resources/INVOICES/";
+        FileWriter wr = new FileWriter(absolutePath + "MM_invoices_" + invoice.getInvoiceDate() + ".csv");
         BufferedWriter br = new BufferedWriter(wr);
-        String invoiceStruct = "";
+        double totalWithOutTax = invoice.getPeopleQuantity() * invoice.getUnitPrice();
+        double totalWithTax = totalWithOutTax + (totalWithOutTax * invoice.getTax() / 100);
+        String invoiceStruct = "Factura\n\n"
+                + "Nº: " + invoice.getInvoiceNum() + "\n"
+                + "Fecha: " + invoice.getInvoiceDate() + "\n\n"
+                + "Datos de la Empresa:\n"
+                + "Nombre: " + COMPANY + "\n"
+                + "CIF: " + CIF + "\n"
+                + "Dirección: " + COMPANY_ADDRESS + "\n\n"
+                + "Datos del Proveedor:\n"
+                + "Nombre: " + invoice.getProviderName() + "\n"
+                + "Costos:\n"
+                + "Asegurados: " + invoice.getPeopleQuantity() + " personas\n"
+                + "Coste unitario: " + String.format("%.2f", invoice.getUnitPrice()) + " €\n"
+                + "Coste total sin IVA: " + String.format("%.2f", totalWithOutTax)+ "\n"
+                + "IVA (21%): " + invoice.getTax() + " €\n\n"
+                + "Total a Pagar: " + String.format("%.2f", totalWithTax) + " €";
         br.write(invoiceStruct);
         br.flush();
         br.close();
+        System.out.println("Escritura de la factura con exito");
     }
 
     private void insertDataInvoiceToDB(String provider) throws SQLException {
+        int total = getTotalPeopleByProvider(provider);
         try {
             con = DriverManager.getConnection("jdbc:mysql://localhost:3306/motomamidb", "root", "rootroot");
-            String query = "INSERT INTO mm_invoice (invoice_date = sysdate(), provider_name, people_quantity, unit_price) VALUES (?, ?, ?, ?, ?)";
-            int total = getTotalPeopleByProvider(provider);
+            String query = "INSERT INTO mm_invoice (invoice_num, invoice_date, provider_name, people_quantity, unit_price) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement ps;
             ps = con.prepareStatement(query);
-            ps.setString(2, provider);
-            ps.setInt(3, total);
-            ps.setDouble(4, 20.3);
+            ps.setLong(1, 00000000001);
+            ps.setDate(2, new java.sql.Date(new Date().getTime()));
+            ps.setString(3, provider);
+            ps.setInt(4, total);
+            ps.setDouble(5, 20.3);
             ps.executeUpdate();
         } catch (SQLException e) {
             System.err.println("Error al obtener el total de asegurados: " + e.getMessage());
@@ -158,6 +178,7 @@ public class ProcessServiceImpl implements ProcessService {
             invoices.add(invoiceDto);
             while (rs.next()) {
                 invoiceDto.setInvoiceNum(rs.getLong("invoice_num"));
+                invoiceDto.setProviderName(rs.getString("provider_name"));
                 invoiceDto.setInvoiceDate(rs.getDate("invoice_date"));
                 invoiceDto.setPeopleQuantity(rs.getInt("people_quantity"));
                 invoiceDto.setUnitPrice(rs.getDouble("unit_price"));
